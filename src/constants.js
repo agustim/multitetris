@@ -3,6 +3,28 @@ export const ROWS = 20;
 export const CELL_SIZE = 28;
 export const NEXT_CELL_SIZE = 22;
 
+export function getCellSizes() {
+  const DESKTOP_BREAKPOINT = 768;
+  if (window.innerWidth >= DESKTOP_BREAKPOINT) {
+    return { cellSize: CELL_SIZE, nextCellSize: NEXT_CELL_SIZE };
+  }
+
+  const padding = 8;
+  const controlsHeight = 200;
+  const headerHeight = 52;
+  const borderHeight = 4;
+
+  const availWidth = window.innerWidth - padding * 2;
+  const availHeight = window.innerHeight - padding * 2 - headerHeight - controlsHeight - borderHeight;
+
+  const fromW = Math.floor(availWidth / COLS);
+  const fromH = Math.floor(availHeight / ROWS);
+  const cellSize = Math.max(14, Math.min(fromW, fromH, 40));
+  const nextCellSize = Math.floor(cellSize * 0.65);
+
+  return { cellSize, nextCellSize };
+}
+
 export const PIECE_SHAPES = {
   I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
   O: [[1,1],[1,1]],

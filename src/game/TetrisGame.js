@@ -1,7 +1,7 @@
 import { Board } from './Board.js';
 import { Piece } from './Piece.js';
 import { Renderer } from '../ui/renderer.js';
-import { LEVEL_SPEEDS, LINE_POINTS, LINES_PER_LEVEL } from '../constants.js';
+import { LEVEL_SPEEDS, LINE_POINTS, LINES_PER_LEVEL, getCellSizes } from '../constants.js';
 
 export class TetrisGame {
   constructor(options) {
@@ -10,6 +10,7 @@ export class TetrisGame {
     this.theme = { ...options.theme };
     this.canvas = options.canvas;
     this.nextCanvas = options.nextCanvas;
+    this.miNextCanvas = options.miNextCanvas || null;
     this.renderer = new Renderer(this.canvas, this.nextCanvas);
 
     this.onAttack = options.onAttack || (() => {});
@@ -34,20 +35,50 @@ export class TetrisGame {
         e.preventDefault();
       }
       switch (key) {
-        case 'ArrowLeft':  this.currentPiece.moveLeft(this.board); break;
-        case 'ArrowRight': this.currentPiece.moveRight(this.board); break;
+        case 'ArrowLeft':  this.moveLeft(); break;
+        case 'ArrowRight': this.moveRight(); break;
         case 'ArrowDown':
-          if (!this.currentPiece.moveDown(this.board)) this.lockPiece();
-          this.frameCount = 0;
+          this.softDrop();
           break;
-        case 'ArrowUp':    this.currentPiece.rotateCW(this.board); break;
-        case 'z': case 'Z': this.currentPiece.rotateCCW(this.board); break;
+        case 'ArrowUp':    this.rotateCW(); break;
+        case 'z': case 'Z': this.rotateCCW(); break;
         case ' ':
-          this.currentPiece.hardDrop(this.board);
-          this.lockPiece();
+          this.hardDrop();
           break;
       }
     };
+  }
+
+  moveLeft() {
+    if (!this.alive || !this.currentPiece) return;
+    this.currentPiece.moveLeft(this.board);
+  }
+
+  moveRight() {
+    if (!this.alive || !this.currentPiece) return;
+    this.currentPiece.moveRight(this.board);
+  }
+
+  softDrop() {
+    if (!this.alive || !this.currentPiece) return;
+    if (!this.currentPiece.moveDown(this.board)) this.lockPiece();
+    this.frameCount = 0;
+  }
+
+  rotateCW() {
+    if (!this.alive || !this.currentPiece) return;
+    this.currentPiece.rotateCW(this.board);
+  }
+
+  rotateCCW() {
+    if (!this.alive || !this.currentPiece) return;
+    this.currentPiece.rotateCCW(this.board);
+  }
+
+  hardDrop() {
+    if (!this.alive || !this.currentPiece) return;
+    this.currentPiece.hardDrop(this.board);
+    this.lockPiece();
   }
 
   start() {
@@ -58,6 +89,10 @@ export class TetrisGame {
     this.alive = true;
     this.bag = [];
     this.frameCount = 0;
+
+    const sizes = getCellSizes();
+    this.renderer.resize();
+
     this.spawnPiece();
     this.renderer.render(this.board, this.currentPiece, this.nextPiece, this.theme);
     document.addEventListener('keydown', this.handleKeyDown);
@@ -139,6 +174,28 @@ export class TetrisGame {
     });
   }
 
+  renderMobileNext() {
+    if (!this.miNextCanvas || !this.nextPiece) return;
+    const sizes = getCellSizes();
+    const s = sizes.nextCellSize;
+    const ctx = this.miNextCanvas.getContext('2d');
+    if (!ctx) return;
+    this.miNextCanvas.width = 4 * s;
+    this.miNextCanvas.height = 4 * s;
+    ctx.fillStyle = this.theme.background;
+    ctx.fillRect(0, 0, 4 * s, 4 * s);
+    const color = this.theme[this.nextPiece.type];
+    if (!color) return;
+    ctx.fillStyle = color;
+    for (let r = 0; r < this.nextPiece.shape.length; r++) {
+      for (let c = 0; c < this.nextPiece.shape[r].length; c++) {
+        if (this.nextPiece.shape[r][c]) {
+          this.renderer.drawBlock(ctx, c, r, s);
+        }
+      }
+    }
+  }
+
   tick(timestamp) {
     if (!this.alive) {
       this.renderer.render(this.board, this.currentPiece, this.nextPiece, this.theme);
@@ -154,6 +211,7 @@ export class TetrisGame {
       }
     }
     this.renderer.render(this.board, this.currentPiece, this.nextPiece, this.theme);
+    this.renderMobileNext();
     this.animFrameId = requestAnimationFrame((t) => this.tick(t));
   }
 

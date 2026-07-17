@@ -1,4 +1,4 @@
-import { COLS, ROWS, CELL_SIZE, NEXT_CELL_SIZE } from '../constants.js';
+import { COLS, ROWS, getCellSizes } from '../constants.js';
 
 export class Renderer {
   constructor(boardCanvas, nextCanvas) {
@@ -6,10 +6,21 @@ export class Renderer {
     this.boardCtx = boardCanvas.getContext('2d');
     this.nextCanvas = nextCanvas;
     this.nextCtx = nextCanvas.getContext('2d');
-    this.boardCanvas.width = COLS * CELL_SIZE;
-    this.boardCanvas.height = ROWS * CELL_SIZE;
-    this.nextCanvas.width = 4 * NEXT_CELL_SIZE;
-    this.nextCanvas.height = 4 * NEXT_CELL_SIZE;
+
+    this.cellSize = 28;
+    this.nextCellSize = 22;
+
+    this.resize();
+  }
+
+  resize() {
+    const sizes = getCellSizes();
+    this.cellSize = sizes.cellSize;
+    this.nextCellSize = sizes.nextCellSize;
+    this.boardCanvas.width = COLS * this.cellSize;
+    this.boardCanvas.height = ROWS * this.cellSize;
+    this.nextCanvas.width = 4 * this.nextCellSize;
+    this.nextCanvas.height = 4 * this.nextCellSize;
   }
 
   render(board, currentPiece, nextPiece, theme) {
@@ -19,8 +30,8 @@ export class Renderer {
 
   renderBoard(board, currentPiece, theme) {
     const ctx = this.boardCtx;
-    const w = COLS * CELL_SIZE;
-    const h = ROWS * CELL_SIZE;
+    const w = COLS * this.cellSize;
+    const h = ROWS * this.cellSize;
 
     ctx.fillStyle = theme.background;
     ctx.fillRect(0, 0, w, h);
@@ -28,10 +39,10 @@ export class Renderer {
     ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 0.5;
     for (let r = 0; r <= ROWS; r++) {
-      ctx.beginPath(); ctx.moveTo(0, r * CELL_SIZE); ctx.lineTo(w, r * CELL_SIZE); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r * this.cellSize); ctx.lineTo(w, r * this.cellSize); ctx.stroke();
     }
     for (let c = 0; c <= COLS; c++) {
-      ctx.beginPath(); ctx.moveTo(c * CELL_SIZE, 0); ctx.lineTo(c * CELL_SIZE, h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(c * this.cellSize, 0); ctx.lineTo(c * this.cellSize, h); ctx.stroke();
     }
 
     for (let r = 0; r < ROWS; r++) {
@@ -39,7 +50,7 @@ export class Renderer {
         const color = board.grid[r][c];
         if (color) {
           ctx.fillStyle = color;
-          this.drawBlock(ctx, c, r, CELL_SIZE);
+          this.drawBlock(ctx, c, r, this.cellSize);
         }
       }
     }
@@ -51,7 +62,7 @@ export class Renderer {
     for (let r = 0; r < currentPiece.shape.length; r++) {
       for (let c = 0; c < currentPiece.shape[r].length; c++) {
         if (currentPiece.shape[r][c]) {
-          this.drawBlock(ctx, currentPiece.col + c, ghostRow + r, CELL_SIZE);
+          this.drawBlock(ctx, currentPiece.col + c, ghostRow + r, this.cellSize);
         }
       }
     }
@@ -62,7 +73,7 @@ export class Renderer {
       for (let r = 0; r < currentPiece.shape.length; r++) {
         for (let c = 0; c < currentPiece.shape[r].length; c++) {
           if (currentPiece.shape[r][c]) {
-            this.drawBlock(ctx, currentPiece.col + c, currentPiece.row + r, CELL_SIZE);
+            this.drawBlock(ctx, currentPiece.col + c, currentPiece.row + r, this.cellSize);
           }
         }
       }
@@ -72,9 +83,9 @@ export class Renderer {
         for (let c = 0; c < currentPiece.shape[r].length; c++) {
           if (currentPiece.shape[r][c]) {
             ctx.strokeRect(
-              (currentPiece.col + c) * CELL_SIZE + 1.5,
-              (currentPiece.row + r) * CELL_SIZE + 1.5,
-              CELL_SIZE - 3, CELL_SIZE - 3
+              (currentPiece.col + c) * this.cellSize + 1.5,
+              (currentPiece.row + r) * this.cellSize + 1.5,
+              this.cellSize - 3, this.cellSize - 3
             );
           }
         }
@@ -85,7 +96,7 @@ export class Renderer {
   renderNext(nextPiece, theme) {
     const ctx = this.nextCtx;
     ctx.fillStyle = theme.background;
-    ctx.fillRect(0, 0, 4 * NEXT_CELL_SIZE, 4 * NEXT_CELL_SIZE);
+    ctx.fillRect(0, 0, 4 * this.nextCellSize, 4 * this.nextCellSize);
     if (!nextPiece) return;
     const color = theme[nextPiece.type];
     if (!color) return;
@@ -93,7 +104,7 @@ export class Renderer {
     for (let r = 0; r < nextPiece.shape.length; r++) {
       for (let c = 0; c < nextPiece.shape[r].length; c++) {
         if (nextPiece.shape[r][c]) {
-          this.drawBlock(ctx, c, r, NEXT_CELL_SIZE);
+          this.drawBlock(ctx, c, r, this.nextCellSize);
         }
       }
     }

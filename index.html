@@ -2,10 +2,11 @@
 <html lang="ca">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Multitetris</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
     body {
       background: #111;
       color: #eee;
@@ -13,13 +14,17 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
     #app {
       display: flex;
       flex-direction: column;
       align-items: center;
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
     }
     #lobby {
       display: flex;
@@ -29,6 +34,7 @@
       padding: 32px;
       border-radius: 12px;
       min-width: 320px;
+      max-width: 90vw;
     }
     #lobby h1 { text-align: center; color: #e94560; font-size: 1.8rem; }
     #lobby label { font-size: 0.85rem; color: #aaa; }
@@ -51,13 +57,24 @@
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
+      touch-action: manipulation;
     }
     #lobby button:hover { background: #c73652; }
     #lobby button:disabled { opacity: 0.5; cursor: not-allowed; }
     #lobby .row { display: flex; gap: 8px; }
     #lobby .row button { flex: 1; }
     #lobby #status { text-align: center; font-size: 0.85rem; color: #888; }
-    #game-container { display: none; gap: 20px; align-items: flex-start; }
+
+    #game-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      max-height: 100vh;
+      padding: 4px;
+      gap: 4px;
+    }
     #board-wrapper { position: relative; }
     #board-canvas {
       border: 2px solid #333;
@@ -67,8 +84,12 @@
     #sidebar {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+      min-width: 120px;
     }
+    #sidebar .sb-info { display: flex; flex-direction: column; gap: 2px; }
+    #sidebar .sb-label { font-size: 0.7rem; color: #888; }
+    #sidebar .sb-value { font-size: 1rem; font-weight: 700; }
     #next-canvas {
       border: 2px solid #333;
       border-radius: 4px;
@@ -81,17 +102,77 @@
       gap: 4px;
     }
     #peers li {
-      padding: 6px 10px;
+      padding: 4px 8px;
       background: #1a1a2e;
       border-radius: 4px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       display: flex;
       justify-content: space-between;
     }
     #peers li .name { color: #eee; }
     #peers li .lines { color: #e94560; }
     #peers li.you { border-left: 3px solid #e94560; }
-    #peers li .dead { color: #f00; font-size: 0.7rem; }
+    #peers li .dead { color: #f00; font-size: 0.65rem; }
+
+    /* Mobile info bar (hidden on desktop) */
+    #mobile-info {
+      display: none;
+      width: 100%;
+      justify-content: space-around;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    #mobile-info .mi-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    #mobile-info .mi-label { font-size: 0.6rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    #mobile-info .mi-value { font-size: 0.9rem; font-weight: 700; }
+    #mobile-info #mi-next-canvas {
+      border: 1px solid #333;
+      border-radius: 2px;
+      display: block;
+    }
+
+    /* Touch controls */
+    #touch-controls {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      touch-action: manipulation;
+    }
+    .tc-row { display: flex; gap: 8px; justify-content: center; }
+    .tc-btn {
+      width: 56px;
+      height: 56px;
+      border: none;
+      border-radius: 12px;
+      background: #1a1a2e;
+      color: #eee;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background 0.1s, transform 0.1s;
+    }
+    .tc-btn:active, .tc-btn.pressed {
+      background: #e94560;
+      transform: scale(0.92);
+    }
+    .tc-btn-wide {
+      width: 80px;
+    }
+
     .game-over-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -105,6 +186,59 @@
     }
     .game-over-overlay h2 { color: #e94560; font-size: 1.6rem; }
     .game-over-overlay p { color: #aaa; font-size: 0.9rem; }
+    .game-over-overlay button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    /* Desktop layout */
+    @media (min-width: 768px) {
+      #game-container {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 20px;
+        height: auto;
+        padding: 0;
+        max-width: none;
+      }
+      #sidebar { display: flex; }
+      #mobile-info { display: none !important; }
+      #touch-controls { display: none !important; }
+    }
+
+    /* Mobile layout */
+    @media (max-width: 767px) {
+      body { align-items: flex-start; padding-top: 8px; }
+      #app { height: 100dvh; }
+      #game-container {
+        padding: 4px;
+        gap: 4px;
+        justify-content: space-between;
+      }
+      #sidebar { display: none !important; }
+      #mobile-info { display: flex; }
+      #touch-controls { display: flex; }
+    }
+
+    @media (max-height: 700px) and (max-width: 767px) {
+      .tc-btn { width: 48px; height: 48px; font-size: 1.2rem; }
+      .tc-btn-wide { width: 68px; }
+      #touch-controls { gap: 4px; }
+      .tc-row { gap: 6px; }
+    }
+
+    @media (max-height: 600px) and (max-width: 767px) {
+      .tc-btn { width: 40px; height: 40px; font-size: 1rem; }
+      .tc-btn-wide { width: 56px; }
+      #touch-controls { gap: 3px; padding: 2px 0; }
+      .tc-row { gap: 5px; }
+    }
   </style>
 </head>
 <body>
@@ -125,26 +259,60 @@
       </div>
       <div id="status">Introdueix un nom i crea o uneix-te a una sala</div>
     </div>
+
     <div id="game-container">
+      <!-- Mobile info bar -->
+      <div id="mobile-info">
+        <div class="mi-item">
+          <span class="mi-label">Següent</span>
+          <canvas id="mi-next-canvas"></canvas>
+        </div>
+        <div class="mi-item">
+          <span class="mi-label">Puntuació</span>
+          <span class="mi-value" id="mi-score">0</span>
+        </div>
+        <div class="mi-item">
+          <span class="mi-label">Línies</span>
+          <span class="mi-value" id="mi-lines">0</span>
+        </div>
+      </div>
+
       <div id="board-wrapper">
         <canvas id="board-canvas"></canvas>
       </div>
+
       <div id="sidebar">
         <div>
-          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">SEGÜENT</div>
+          <div class="sb-label">SEGÜENT</div>
           <canvas id="next-canvas"></canvas>
         </div>
         <div>
-          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">PUNTUACIÓ</div>
-          <div id="score-display" style="font-size:1.2rem;font-weight:700">0</div>
+          <div class="sb-label">PUNTUACIÓ</div>
+          <div class="sb-value" id="score-display">0</div>
         </div>
         <div>
-          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">LÍNIES</div>
-          <div id="lines-display" style="font-size:1.2rem;font-weight:700">0</div>
+          <div class="sb-label">LÍNIES</div>
+          <div class="sb-value" id="lines-display">0</div>
         </div>
         <div>
-          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">JUGADORS</div>
+          <div class="sb-label">JUGADORS</div>
           <ul id="peers"></ul>
+        </div>
+      </div>
+
+      <!-- Touch controls (mobile only) -->
+      <div id="touch-controls">
+        <div class="tc-row">
+          <button class="tc-btn" data-action="rotateCW" aria-label="Rotar dreta">↻</button>
+          <button class="tc-btn" data-action="rotateCCW" aria-label="Rotar esquerra">↺</button>
+        </div>
+        <div class="tc-row">
+          <button class="tc-btn" data-action="moveLeft" aria-label="Moure esquerra">←</button>
+          <button class="tc-btn" data-action="softDrop" aria-label="Baixar">↓</button>
+          <button class="tc-btn" data-action="moveRight" aria-label="Moure dreta">→</button>
+        </div>
+        <div class="tc-row">
+          <button class="tc-btn tc-btn-wide" data-action="hardDrop" aria-label="Caiguda lliure">⏬</button>
         </div>
       </div>
     </div>
