@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multitetris</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #lobby {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #1a1a2e;
+      padding: 32px;
+      border-radius: 12px;
+      min-width: 320px;
+    }
+    #lobby h1 { text-align: center; color: #e94560; font-size: 1.8rem; }
+    #lobby label { font-size: 0.85rem; color: #aaa; }
+    #lobby input, #lobby select {
+      padding: 8px 12px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #16213e;
+      color: #eee;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    #lobby button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #lobby button:hover { background: #c73652; }
+    #lobby button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #lobby .row { display: flex; gap: 8px; }
+    #lobby .row button { flex: 1; }
+    #lobby #status { text-align: center; font-size: 0.85rem; color: #888; }
+    #game-container { display: none; gap: 20px; align-items: flex-start; }
+    #board-wrapper { position: relative; }
+    #board-canvas {
+      border: 2px solid #333;
+      border-radius: 4px;
+      display: block;
+    }
+    #sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #next-canvas {
+      border: 2px solid #333;
+      border-radius: 4px;
+      display: block;
+    }
+    #peers {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #peers li {
+      padding: 6px 10px;
+      background: #1a1a2e;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    #peers li .name { color: #eee; }
+    #peers li .lines { color: #e94560; }
+    #peers li.you { border-left: 3px solid #e94560; }
+    #peers li .dead { color: #f00; font-size: 0.7rem; }
+    .game-over-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      gap: 12px;
+    }
+    .game-over-overlay h2 { color: #e94560; font-size: 1.6rem; }
+    .game-over-overlay p { color: #aaa; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="lobby">
+      <h1>Multitetris</h1>
+      <label for="name-input">Nom</label>
+      <input id="name-input" type="text" maxlength="20" placeholder="El teu nom..." value="Jugador" />
+      <label for="theme-select">Tema de colors</label>
+      <select id="theme-select"></select>
+      <div class="row">
+        <button id="create-btn">Crear Sala</button>
+        <button id="join-btn">Unir-se</button>
+      </div>
+      <div id="room-section">
+        <label for="room-input">ID de sala (per unir-se)</label>
+        <input id="room-input" type="text" maxlength="30" placeholder="ex: partida-123" />
+      </div>
+      <div id="status">Introdueix un nom i crea o uneix-te a una sala</div>
+    </div>
+    <div id="game-container">
+      <div id="board-wrapper">
+        <canvas id="board-canvas"></canvas>
+      </div>
+      <div id="sidebar">
+        <div>
+          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">SEGÜENT</div>
+          <canvas id="next-canvas"></canvas>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">PUNTUACIÓ</div>
+          <div id="score-display" style="font-size:1.2rem;font-weight:700">0</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">LÍNIES</div>
+          <div id="lines-display" style="font-size:1.2rem;font-weight:700">0</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">JUGADORS</div>
+          <ul id="peers"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
